@@ -1,0 +1,11 @@
+# Production settings for full analysis
+data_input:
+  data_path: "project_data/experiment_01/raw_files"
+  expected_file_count: 1000
+
+analysis:
+  parallel_processing: true
+  n_cores: 8
+
+output:
+  output_path: "results/production"

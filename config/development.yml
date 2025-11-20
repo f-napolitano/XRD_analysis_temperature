@@ -1,0 +1,13 @@
+# Development environment settings
+data_input:
+  data_path: "test_data/small_subset"
+  expected_file_count: 10
+
+analysis:
+  parallel_processing: false  # Faster debugging
+
+output:
+  output_path: "results/development"
+
+plotting:
+  create_plots: false  # Skip plots for faster iteration

@@ -1,0 +1,55 @@
+# Analysis Configuration
+# This file contains all adjustable parameters for the analysis
+
+# Sample
+sample:
+  name: "HOPG_Santa-Fe"  # used for naming output files
+  measurement: "2025-06-17_cliv_aire"  # used for naming output files (file_name = sample + measurement + direction .csv)
+
+# Data Input Settings
+data_input:
+  data_path: "~/Documents/R_projects/HOPG_Gustavo/files/2025-05_HOPG_Santa-Fe/2025-06-17_HOPG_cliv_aire"
+  direction: ["subida", "bajada"]
+  file_pattern: "\\.xrdml$"
+  recursive_search: true
+  #expected_file_count: 1000  # For validation
+
+# Background Subtraction Parameters
+background:
+  method: "interpolated_baseline"  # Options: interpolated_baseline, polynomial, none
+  interpolation_points: [50, 150, 250, 350]  # x-values for baseline
+  polynomial_degree: 2
+  smoothing_window: 5
+  distance_from_center: 0.7 # Radius (in 2theta) around the peak maximum where it is considered Bragg Peak, outside range it is only background
+
+# Area Calculation Settings
+area_calculation:
+  peak_min: [25]   # Lower 2theta cut-off for Bragg peak at this index (can be a vector if analysis is over several Bragg peaks)
+  peak_max: [28]   # Upper 2theta cut-off for Bragg peak at this index (can be a vector if analysis is over several Bragg peaks)
+  alpha_beta: [3]  # Flag to indicates if Bragg peak at this index is coming from monochromatic radiation (=2) or a Kalpha source (=3) (can be a vector if analysis is over several Bragg peaks)
+  integration_method: "spline"  # Options: spline, trapezoidal, simpson
+  spline_method: "natural"
+  x_range: [100, 400]  # Integration limits
+  normalize: true
+
+# Output Settings
+output:
+  output_path: "results/HOPG_Santa-Fe/2025-06-17_HOPG_Santa-Fe_cliv_aire"
+  save_intermediate: true
+  create_subdirs: true
+  formats: ["csv", "rds", "pdf"]
+
+# Analysis Parameters
+analysis:
+  interpolation_method: "linear"
+  significant_digits: 4
+  parallel_processing: true
+  n_cores: 4
+
+# Plotting Settings
+plotting:
+  create_plots: true
+  plot_width: 10
+  plot_height: 8
+  dpi: 300
+  theme: "classic"
