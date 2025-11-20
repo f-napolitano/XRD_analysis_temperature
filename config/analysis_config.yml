@@ -3,13 +3,13 @@
 
 # Sample
 sample:
-  name: "HOPG_Santa-Fe"  # used for naming output files
-  measurement: "2025-06-17_cliv_aire"  # used for naming output files (file_name = sample + measurement + direction .csv)
+  name: "sample_name"  # used for naming output files
+  measurement: "measurement_id"  # used for naming output files (file_name = sample + measurement + direction .csv)
 
 # Data Input Settings
 data_input:
-  data_path: "~/Documents/R_projects/HOPG_Gustavo/files/2025-05_HOPG_Santa-Fe/2025-06-17_HOPG_cliv_aire"
-  direction: ["subida", "bajada"]
+  data_path: "input_files_path"
+  direction: ["up", "down"]
   file_pattern: "\\.xrdml$"
   recursive_search: true
   #expected_file_count: 1000  # For validation
@@ -34,7 +34,7 @@ area_calculation:
 
 # Output Settings
 output:
-  output_path: "results/HOPG_Santa-Fe/2025-06-17_HOPG_Santa-Fe_cliv_aire"
+  output_path: "output_files_path"
   save_intermediate: true
   create_subdirs: true
   formats: ["csv", "rds", "pdf"]
