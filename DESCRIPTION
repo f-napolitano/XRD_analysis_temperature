@@ -1,6 +1,6 @@
 Package: HOPGbeta
 Title: Analysis of Sample Crystallographic Parameters From XRD Patterns In Function Of Temperature
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: 
     person("Federico", "Napolitano", , "napolitf@gmail.com", role = c("aut", "cre"))
 Description: This package takes all the diffraction patterns (Panalytical .xrdml format) stored in a directory and for each one of them identify a certain Bragg peak and calculates reflection 2theta position, intensity, area, and integral breadth. Store the results in an output file and the resulting plot in a png file.
