@@ -14,6 +14,13 @@ data_input:
   recursive_search: true
   #expected_file_count: 1000  # For validation
 
+parallel:
+  enabled: true
+  backend: "future"
+  workers: 12                 # Number of cores to use
+  strategy: "multisession"   # Options: multisession, multicore, sequential
+  gc: true                   # Garbage collect between tasks? (recommended)
+
 # Background Subtraction Parameters
 background:
   method: "interpolated_baseline"  # Options: interpolated_baseline, polynomial, none
@@ -38,6 +45,7 @@ output:
   save_intermediate: true
   create_subdirs: true
   formats: ["csv", "rds", "pdf"]
+  plot: ["beta", "maximum"]
 
 # Analysis Parameters
 analysis:

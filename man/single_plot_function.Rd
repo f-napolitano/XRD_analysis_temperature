@@ -2,22 +2,29 @@
 % Please edit documentation in R/data_IO.R
 \name{single_plot_function}
 \alias{single_plot_function}
-\title{Plotting results using ggplot2 library. It is expected to work with 2 csv files ("up" and "down" directions) or with a list of 2 data frames ("up" and "down" directions)}
+\title{Plotting results using ggplot2 library. It has 2 possible working modes controlled by "parallel" argument. If data is coming from a parallel processing pipeline then parallel = TRUE and filepointer must be a tibble with columns at least c("Temperature", "beta", "maximum", "direction"), then function produces the ggplot of "beta" or "maximum" (choosen by "yaxis" value) as a function of "Temperature" and class given by "direction". If data is coming from a sequential processing pipeline (parallel = FALSE) then pipeline must be a nested list where first level are the possible "direction" and at theirs second level must be a tibble with the data to be plotted, this tibble should have at least c("id", "Temperature", "beta", "maximum") columns.}
 \usage{
-single_plot_function(filepointer, method = c("csv", "list"), saving_dir)
+single_plot_function(
+  filepointer,
+  parallel,
+  saving_dir,
+  yaxis = c("beta", "maximum")
+)
 }
 \arguments{
-\item{filepointer}{path where the csv files intended for plot are}
+\item{filepointer}{Data frame (parallel = TRUE) or list (parallel = FALSE) where the data to be plotted is}
 
-\item{method}{flag to control what is the input, csv files (method == "csv") or a list of data frames (method == "list").}
+\item{parallel}{Logical, flag to control what the input is coming from, a parallel processing pipeline (parallel == TRUE) or a sequential pipeline (parallel == FALSe).}
 
-\item{saving_dir}{path to output directory where graph file is saved}
+\item{saving_dir}{Character, path to output directory where graph file is saved into}
+
+\item{yaxis}{Character, name of the data column that is going to be plotted in the y axis ("beta" or "maximum")}
 }
 \value{
 return a ggplot2 object with the plot, additionally it saves it in output directory as a png file
 }
 \description{
-Plotting results using ggplot2 library. It is expected to work with 2 csv files ("up" and "down" directions) or with a list of 2 data frames ("up" and "down" directions)
+Plotting results using ggplot2 library. It has 2 possible working modes controlled by "parallel" argument. If data is coming from a parallel processing pipeline then parallel = TRUE and filepointer must be a tibble with columns at least c("Temperature", "beta", "maximum", "direction"), then function produces the ggplot of "beta" or "maximum" (choosen by "yaxis" value) as a function of "Temperature" and class given by "direction". If data is coming from a sequential processing pipeline (parallel = FALSE) then pipeline must be a nested list where first level are the possible "direction" and at theirs second level must be a tibble with the data to be plotted, this tibble should have at least c("id", "Temperature", "beta", "maximum") columns.
 }
 \examples{
 \dontrun{

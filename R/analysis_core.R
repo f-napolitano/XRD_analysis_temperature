@@ -7,6 +7,8 @@
 #'                  Used to isolate the desired Bragg peak from a others.
 #' @param alpha_beta flag to control the type of radiation source
 #'                   =2 if monochromatic, =3 if Kalpha doublet
+#' @param config List, configuration file
+#' @importFrom stats splinefun integrate
 #' @returns a list with:
 #'              "pattern_lim" a data frame with the 2theta reduced and background
 #'              subtracted XRD pattern and column expanded to include the values of
@@ -20,7 +22,7 @@
 #'              "max_peak_rest" a double with the max intensity of the Bragg peak after background subtraction
 #'              "beta_unorm" a double with the integral breadth of the Bragg peak before normalization.
 #' @export
-area_function <- function(data, xmin, xmax, alpha_beta) {
+area_function <- function(data, xmin, xmax, alpha_beta, config) {
 
   pattern_lim <- data[data$twoTheta > xmin & data$twoTheta < xmax, ]  # isolate peak
 
@@ -70,15 +72,33 @@ area_function <- function(data, xmin, xmax, alpha_beta) {
   #temperature <- data[["Temperature"]]
 
   # wrapping it up
-  list(pattern_reduction = pattern_lim,
-       background = background_substracted[["background_function"]]$coefficients,
-       integ_result = result, # results and parameters from integral calculation
-       area_total = area,
-       integ_result_norm = result_norm,
-       twotheta_max = twotheta_max,
-       beta = beta,
-       max_peak_rest = max(pattern_lim$int_rest),
-       beta_unnorm = beta_unnorm)
+
+  if (config$parallel$enabled == FALSE ) {
+    list(pattern_reduction = pattern_lim,
+         background = background_substracted[["background_function"]]$coefficients,
+         integ_result = result, # results and parameters from integral calculation
+         area_total = area,
+         integ_result_norm = result_norm,
+         twotheta_max = twotheta_max,
+         beta = beta,
+         max_peak_rest = max(pattern_lim$int_rest),
+         beta_unnorm = beta_unnorm
+         )
+  } else {
+    list(pattern_reduction = pattern_lim,
+         temperature = mean(pattern_lim$temperature),
+         direction = pattern_lim$direction[1],
+         background = background_substracted[["background_function"]]$coefficients,
+         integ_result = result,
+         area_total = area,
+         integ_result_norm = result_norm,
+         twotheta_max = twotheta_max,
+         beta = beta,
+         max_peak_rest = max(pattern_lim$int_rest),
+         beta_unnorm = beta_unnorm
+         )
+   #return(area)
+  }
 }
 
 
@@ -86,20 +106,39 @@ area_function <- function(data, xmin, xmax, alpha_beta) {
 #' @param nested_list A nested list with the results from several XRD diffraction patterns
 #'                    analysis. Main list goes along the different patterns, inside of each pattern
 #'                    list is another list with the pattern-specific results
+#' @param parallel Logical, "nested_list" came from parallel or sequential pipeline
+#' @importFrom purrr map list_rbind imap
+#' @importFrom tibble tibble
+#' @importFrom dplyr arrange
 #' @returns A tibble with its columns being relevant peak parameters and each row corresponding
 #'          to a XRD pattern.
 #' @export
-extract_results_function <- function(nested_list) {
-  purrr::map(nested_list, function(direction) {
-    purrr::imap_dfr(direction, function(inner_list, id) {
-      tibble::tibble(
-        id = as.integer(id),
-        Temperature = inner_list$Temperature,
-        maximum = inner_list$pattern$max_peak_rest,
-        beta = inner_list$pattern$beta,
-        beta_unnorm = inner_list$pattern$beta_unnorm
-      )
-    }) |>
-      dplyr::arrange(id)  # Ensure to being ordered by id
-  })
+extract_results_function <- function(nested_list, parallel = FALSE) {
+  if (parallel) {
+    result_df <- nested_list |>
+      purrr::map(~ tibble::tibble(direction = .x$direction,
+                                  Temperature = .x$temperature,
+                                  maximum = .x$max_peak_rest,
+                                  beta = .x$beta,
+                                  beta_unnorm = .x$beta_unnorm)) |>
+      purrr::list_rbind(names_to = "file_name")  # Adds a column with the list names
+
+
+  }
+  else {
+    purrr::map(nested_list, function(direction) {
+      purrr::imap(direction, function(inner_list, id) {
+        tibble::tibble(
+          id = as.integer(id),
+          Temperature = inner_list$Temperature,
+          maximum = inner_list$pattern$max_peak_rest,
+          beta = inner_list$pattern$beta,
+          beta_unnorm = inner_list$pattern$beta_unnorm
+        )
+      }) |>
+        purrr::list_rbind() |>
+        dplyr::arrange(id)  # Ensure to being ordered by id
+    })
+  }
+
 }

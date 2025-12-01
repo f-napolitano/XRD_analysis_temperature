@@ -11,15 +11,18 @@ Imports:
     xml2,
     dplyr,
     stats,
+    rlang,
     ggplot2,
     yaml,
-    stringr,
     purrr,
     tibble,
     stats,
     utils,
     progress,
-    readr
+    readr,
+    utils,
+    future,
+    future.apply
 Suggests:
     testthat (>= 3.0.0),
     knitr,

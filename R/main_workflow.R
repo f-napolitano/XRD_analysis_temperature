@@ -2,6 +2,11 @@
 # MAIN ANALYSIS FUNCTION
 # ==============================================================================
 
+#' This is the main analysis function (orchestration) that is called by the runner. It takes a configuration file and an environment to proceed with the complete analysis pipeline.
+#' @param config_file Character, name of the configuration file to be used
+#' @param env Character, environment to be used (production == NULL, development, testing)
+#' @param override_list List, a list that overrides the config_file in case to be needed
+#' @importFrom utils modifyList
 run_complete_analysis <- function(config_file = "analysis_config.yml",
                                   env = NULL,
                                   override_list = NULL) {
@@ -35,67 +40,110 @@ run_complete_analysis <- function(config_file = "analysis_config.yml",
   # ========== MAIN ANALYSIS PIPELINE ==========
   message("\n[1/5] Loading data files...")
 
-  patterns <- lapply(config$data_input$direction, function(dir) {
-    filenames <- list.files(paste0(config$data_input$data_path, "/", dir, "/"),
-                            pattern = config$data_input$file_pattern,
-                            full.names = TRUE)
-    pb <- progress::progress_bar$new(total = length(filenames),
+  patterns <- import_all_data(config)
+
+  if (config$parallel$enabled) {
+    # Step 2 (2a, 2b, 2c, 2d): Process all files (using the function from R/analysis_core.R)
+    message("\n[2/5] Processing files through parallel analysis pipeline...")
+
+    # flattening input (WARNING imap_dfr is superseeded, need to be changed to map + list_rbind approach in a future revision)
+    result_df <- purrr::imap_dfr(patterns, function(direction_data, direction_name) {
+      purrr::imap_dfr(direction_data, function(inner_list, index) {
+        data.frame(
+          name = inner_list$fileName,
+          temperature = inner_list$Temperature,
+          direction = direction_name,
+          inner_list$pattern,
+          stringsAsFactors = FALSE
+          )
+        })
+      })
+
+    data_by_file <- split(result_df, result_df$name)
+
+    processed_results <- future.apply::future_lapply(data_by_file, function(file_data) {
+      # Each worker gets all rows for one file
+      area <- area_function(
+        file_data,
+        xmin = config$area_calculation$peak_min,
+        xmax = config$area_calculation$peak_max,
+        alpha_beta = config$area_calculation$alpha_beta,
+        config = config
+        )
+      return(area)
+      }, future.seed = TRUE)
+
+  }
+  else
+  {
+    # Step 2 (2a, 2b, 2c, 2d): Process all files (using the function from R/analysis_core.R)
+    message("\n[2/5] Processing files through sequential analysis pipeline...")
+
+    count_dataframes <- function(x) {
+      if (is.data.frame(x)) return(1)
+      if (!is.list(x)) return(0)
+
+      sum(purrr::map_dbl(x, count_dataframes)) }
+
+    pb <- progress::progress_bar$new(total = count_dataframes(patterns),
                                      format = "[:bar] :percent :eta")
-    lapply(filenames, function(file) {
+
+    processed_results <- purrr::map_depth(patterns, 2, ~ {
       pb$tick()
-      import_xrdml(file)
+      .x$pattern <- area_function(.x$pattern,
+                                  config$area_calculation$peak_min,
+                                  config$area_calculation$peak_max,
+                                  config$area_calculation$alpha_beta,
+                                  config)
+      .x
     })
-  })
-
-  names(patterns) <- config$data_input$direction
-
-  # Step 2 (2a, 2b, 2c, 2d): Process all files (using the function from R/analysis_core.R)
-  message("\n[2/5] Processing files through analysis pipeline...")
-
-  count_dataframes <- function(x) {
-    if (is.data.frame(x)) return(1)
-    if (!is.list(x)) return(0)
-
-    sum(purrr::map_dbl(x, count_dataframes))
   }
 
-  pb <- progress::progress_bar$new(total = count_dataframes(patterns),
-                                   format = "[:bar] :percent :eta")
-
-  results_lst <- purrr::map_depth(patterns, 2, ~ {
-    pb$tick()
-    .x$pattern <- area_function(.x$pattern,
-                                config$area_calculation$peak_min,
-                                config$area_calculation$peak_max,
-                                config$area_calculation$alpha_beta)
-    .x
-  })
 
   # Step 3: Results Aggregation
   message("\n[3/5] Aggregating results...")
-  results_lst_short <- extract_results_function(results_lst)
+  results_lst_short <- extract_results_function(processed_results, config$parallel$enabled)
 
   # Step 4: Exporting results to files
   message("\n[4/5] Exporting results to files")
-  purrr::iwalk(results_lst_short,
-               ~ readr::write_csv(.x,
-                                  file = paste0(output_dir, "/",
-                                                config$sample$name, "_",
-                                                config$sample$measurement, "_",
-                                                .y, ".csv")))
+  if (config$parallel$enabled) {
+    export_parallel_csv(results_lst_short,
+                        output_dir,
+                        config$sample$name,
+                        config$sample$measurement)
+  } else {
+    export_sequential_csv(results_lst_short,
+                          output_dir,
+                          config$sample$name,
+                          config$sample$measurement)
+  }
 
   # Step 4: Plotting results and exporting to png file
   message("\n[5/5] Ploting results and exporting plot to file")
-  plotgg <- single_plot_function(results_lst_short, method = "list", output_dir)
+  plotgg <- single_plot_function(results_lst_short,
+                                 parallel = config$parallel$enabled,
+                                 output_dir,
+                                 config$output$plot[1])
 
   message("\nAnalysis complete!")
   message("Results saved to: ", output_dir)
   message("Files processed: ", sum(lengths(patterns)))
 
   return(list(
-    raw_result = results_lst,
-    results = results_lst_short,
+    results_calculations = processed_results,
+    results_for_plot = results_lst_short,
     config = config,
     output_dir = output_dir,
     plot = plotgg))
+
 }
+
+
+#results <- microbenchmark::microbenchmark(
+#  traditional = results_lst(patterns),
+#  parallel = processed_files(data_by_file),
+#  times = 30  # Number of repetitions
+#)
+
+#print(results)
+#autoplot(results)  # Visual comparison

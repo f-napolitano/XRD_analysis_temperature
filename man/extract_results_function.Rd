@@ -4,12 +4,14 @@
 \alias{extract_results_function}
 \title{Results aggregation}
 \usage{
-extract_results_function(nested_list)
+extract_results_function(nested_list, parallel = FALSE)
 }
 \arguments{
 \item{nested_list}{A nested list with the results from several XRD diffraction patterns
 analysis. Main list goes along the different patterns, inside of each pattern
 list is another list with the pattern-specific results}
+
+\item{parallel}{Logical, "nested_list" came from parallel or sequential pipeline}
 }
 \value{
 A tibble with its columns being relevant peak parameters and each row corresponding

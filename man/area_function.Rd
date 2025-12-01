@@ -4,7 +4,7 @@
 \alias{area_function}
 \title{Calculate parameters of a given peak}
 \usage{
-area_function(data, xmin, xmax, alpha_beta)
+area_function(data, xmin, xmax, alpha_beta, config)
 }
 \arguments{
 \item{data}{data frame with the XRD pattern}
@@ -14,6 +14,8 @@ Used to isolate the desired Bragg peak from a others.}
 
 \item{alpha_beta}{flag to control the type of radiation source
 =2 if monochromatic, =3 if Kalpha doublet}
+
+\item{config}{List, configuration file}
 }
 \value{
 a list with:

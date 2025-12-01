@@ -65,6 +65,7 @@ validate_config <- function(config) {
 #' Save configuration with results for reproducibility
 #' @param config configuration file to be saved
 #' @param output_dir path where configuration file is going to be saved to
+#' @importFrom yaml write_yaml
 #' @export
 save_config_with_results <- function(config, output_dir) {
   config_copy <- config
@@ -81,6 +82,7 @@ save_config_with_results <- function(config, output_dir) {
 
 #' Create a new configuration template
 #' @param output_file file name and path of the new configuration file
+#' @importFrom yaml write_yaml
 #' @export
 create_config_template <- function(output_file = "config/my_analysis.yml") {
   template <- list(

@@ -1,5 +1,7 @@
 ^config$
 ^results$
 ^analysis$
+^tests$
 ^HOPGbeta\.Rproj$
 ^\.Rproj\.user$
+^R/paralel_processing\.R$
